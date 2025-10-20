@@ -1,0 +1,35 @@
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+.ipynb_checkpoints/
+
+# Environments & IDE
+.env
+.venv/
+.conda/
+.vscode/
+.idea/
+
+# Data & Artifacts
+data/*
+!data/README.md
+checkpoints/
+runs/
+outputs/
+indexes/
+chromadb/
+faiss/
+milvus/
+*.pt
+*.bin
+*.safetensors
+*.ckpt
+*.h5
+*.npy
+*.npz
+
+# Notebooks' junk
+*.log
+.DS_Store

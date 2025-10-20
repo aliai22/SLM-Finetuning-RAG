@@ -1,0 +1,53 @@
+[project]
+name = "llmrag"
+version = "0.1.0"
+description = "RAG pipelines, fine-tuning, and evaluations for the LLM Journal write-up"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{name="Your Name", email="you@example.com"}]
+dependencies = [
+  "torch>=2.1.0",
+  "transformers>=4.41.0",
+  "datasets>=2.19.0",
+  "sentence-transformers>=3.0.0",
+  "accelerate>=0.30.0",
+  "peft>=0.11.0",
+  "langchain>=0.2.0",
+  "chromadb>=0.5.0",
+  "huggingface-hub>=0.23.0",
+  "rich>=13.7.0",
+  "tqdm>=4.66.0",
+  "scikit-learn>=1.4.0",
+  "numpy>=1.26.0",
+  "pandas>=2.2.0",
+  "pyyaml>=6.0.1",
+  "typer>=0.12.0",
+  "evaluate>=0.4.2"
+]
+
+[project.optional-dependencies]
+dev = [
+  "black>=24.4.0",
+  "ruff>=0.4.0",
+  "isort>=5.13.0",
+  "pytest>=8.2.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+llmrag = ["py.typed"]
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.black]
+line-length = 100
+target-version = ["py310"]
+
+[tool.ruff]
+line-length = 100
+select = ["E","F","I","UP"]
+ignore = []

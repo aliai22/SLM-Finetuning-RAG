@@ -1,0 +1,25 @@
+Total Training Time: 22490.25 seconds
+Peak GPU Memory Usage: 3.62 GB
+
+2nd Iteration:
+Total Training Time: 22406.77 seconds
+Peak GPU Memory Usage: 3.62 GB
+
+# Data Size
+
+Original Dataset: DatasetDict({
+    train: Dataset({
+        features: ['metadata', 'content'],
+        num_rows: 32307
+    })
+})
+
+Training Dataset: Dataset({
+    features: ['metadata', 'content'],
+    num_rows: 29076
+})
+
+Validation Dataset: Dataset({
+    features: ['metadata', 'content'],
+    num_rows: 3231
+})
