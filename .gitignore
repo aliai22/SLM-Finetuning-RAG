@@ -57,3 +57,9 @@ data/*
 !src/llmrag/training/finetuning_textbooks/**
 !src/llmrag/training/finetuning_embeddmodel/**
 
+# Allow specific curated datasets & config
+!configs/**
+!data/finetuning/**
+!data/resources/**
+
+
