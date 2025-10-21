@@ -22,9 +22,6 @@ indexes/
 chromadb/
 faiss/
 milvus/
-*.pt
-*.bin
-*.safetensors
 *.ckpt
 *.h5
 *.npy
@@ -34,8 +31,29 @@ milvus/
 *.log
 .DS_Store
 
-# large training/eval data
+# large training/eval data (kept external)
 src/llmrag/training/finetuning_embeddmodel/train_dataset.json
 src/llmrag/training/finetuning_embeddmodel/filtered_qa_pairs.jsonl
 data/*
+
+# --------------------------------------------------------------------
+# Model Weights (tracked via Git LFS)
+# --------------------------------------------------------------------
+# Normally we ignore .pt/.bin/.safetensors globally to keep repo light,
+# but we explicitly *un-ignore* the fine-tuned model folders you want in Git.
+
+# Ignore globally (kept out by default)
+*.pt
+*.pth
+*.bin
+*.safetensors
+
+# Allow (un-ignore) your specific fine-tuned model folders
+!src/llmrag/models/gen_model/qa_pairs_finetuning/**
+!src/llmrag/models/gen_model/text_chunks_finetuning/**
+!src/llmrag/models/emb_model/**
+
+# Optionally if you keep models elsewhere (training dirs)
+!src/llmrag/training/finetuning_textbooks/**
+!src/llmrag/training/finetuning_embeddmodel/**
 
