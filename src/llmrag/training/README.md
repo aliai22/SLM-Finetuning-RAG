@@ -39,7 +39,7 @@ Training leverages **parameter-efficient fine-tuning (PEFT)** through LoRA adapt
 
 
 > **Figure 1. Fine-tuning workflow for the Small Language Model (Phi-2)**  
-> ![SLM Fine-Tuning Workflow](docs/figures/slm_finetuning.png)
+> ![SLM Fine-Tuning Workflow]([docs/figures/slm_finetuning.png](https://github.com/aliai22/SLM-Finetuning-RAG/blob/refactor/docs/figures/slm_finetuning.png))
 
 ### Key scripts
 | File | Purpose |
