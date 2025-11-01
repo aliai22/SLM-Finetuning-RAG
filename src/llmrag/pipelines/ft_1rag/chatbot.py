@@ -1,75 +1,97 @@
-from FT_1RAG.vectorstore import query_vecdb
-# from finetuning_embeddModel.embedd_finetuning import load_model
+from llmrag.pipelines.ft_1rag.vectorstore import query_vecdb
+import os
+import torch
 
-import re
-from langchain.prompts import ChatPromptTemplate
-# from sentence_transformers import SentenceTransformer
-# import json
+# ---------------- device + context helpers ----------------
+def _pick_device(model):
+    dev_env = os.getenv("LLMRAG_DEVICE")
+    if dev_env:
+        return torch.device(dev_env)
+    if hasattr(model, "device") and model.device is not None:
+        return model.device
+    return torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# KW_MODEL = SentenceTransformer("all-MiniLM-L12-v2")    # fast model for extractor
-# TOP_K_DENSE   = 20
-# TOP_K_CONTEXT = 5
+def _to_device(batch, device):
+    return {k: (v.to(device) if hasattr(v, "to") else v) for k, v in batch.items()}
 
-# def extract_KW_from_query(
-#     kw_model,
-#     doc:str,
-#     top_n:int,
-#     mmr_diversity:int
-# ):
-#     keyphrases = kw_model.extract_keywords(
-#         doc,
-#         keyphrase_ngram_range=(1, 3),
-#         stop_words='english',
-#         use_mmr=True,
-#         diversity=mmr_diversity,
-#         top_n=top_n
-#     )
-    
-    
-#     # print(keyphrases)
-#     filtered_keywords = [kw for kw, score in keyphrases if score > 0.6]
-#     return filtered_keywords
+def _max_ctx_len(model):
+    cfg = getattr(model, "config", None)
+    if cfg is not None and hasattr(cfg, "max_position_embeddings"):
+        return int(cfg.max_position_embeddings)
+    if cfg is not None and hasattr(cfg, "n_positions"):
+        return int(cfg.n_positions)
+    return 512  # conservative fallback
 
-# KW_DB_PATH = "keywords_database.json"
+def _count_tokens(tokenizer, text):
+    return len(tokenizer.encode(text, add_special_tokens=False))
 
-# with open(KW_DB_PATH, "r", encoding="utf-8") as f:
-#     keyword_db = json.load(f)          # {doc_id: [kw1, kw2, ...]}
+def _auto_limits(user_query, docs, tokenizer, model, want_k_default=3):
+    max_ctx = _max_ctx_len(model)
+    gen_budget = max(16, min(256, max_ctx // 4))
+    overhead = 40
+    max_input = max(64, max_ctx - gen_budget)
+    q_tokens = _count_tokens(tokenizer, user_query)
+    remaining = max_input - q_tokens - overhead
+    if remaining <= 48:
+        return 1, max(24, remaining)
+    k = min(want_k_default, len(docs))
+    per_doc = max(48, remaining // max(1, k))
+    while k > 1 and per_doc < 32:
+        k -= 1
+        per_doc = max(24, remaining // max(1, k))
+    return k, int(min(per_doc, 256))
 
-# embedd_ftmodel_ckpt = "./finetuning_embeddModel/bge-base-en-v1.5-matryoshka2.0"
-# embedd_model = load_model(model_id=embedd_ftmodel_ckpt, eval=True)
+def _trim_text(tokenizer, text, per_doc_tokens):
+    toks = tokenizer.encode(text, add_special_tokens=False)
+    if len(toks) > per_doc_tokens:
+        toks = toks[-per_doc_tokens:]
+        text = tokenizer.decode(toks, skip_special_tokens=True)
+    return text
+# -----------------------------------------------------------
 
 def generate_response(model, tokenizer, text):
-    # prompt = f"User Query:\n{query}\n\nContext:\n{retrieved_qa}"
+    # previous signature retained; now device/context safe
+    device = _pick_device(model)
+    max_ctx = _max_ctx_len(model)
+    gen_budget = max(16, min(256, max_ctx // 4))
+    max_input_len = max(8, max_ctx - gen_budget)
 
-    # formatted_prompt = """
-    # You are an AI assistant who answers a user's query based on the given context. You can only make conversations based on the provided context. If the context is not provided, politely say you don’t have knowledge about that topic.\nNow, answer the following question using the provided context.\n\n{prompt}\nOutput:\n"
-    # """
-    # message_text = f"Instruct: {prompt[0]['content']}\nUser's Query:{prompt[1]['content']}\nContext: {context}\nOutput:\n"
-    # print(message_text)
+    tokens = tokenizer(
+        text,
+        return_tensors="pt",
+        truncation=True,
+        max_length=max_input_len
+    )
+    # backstop hard-clip
+    if tokens["input_ids"].shape[-1] > max_input_len:
+        tokens["input_ids"] = tokens["input_ids"][:, -max_input_len:]
+        if "attention_mask" in tokens:
+            tokens["attention_mask"] = tokens["attention_mask"][:, -max_input_len:]
 
-    # print(formatted_prompt)
-    
-    tokens = tokenizer(text, return_tensors="pt")
-    res = model.generate(**tokens.to("cuda"),
-                         max_new_tokens=1024,
-                         num_return_sequences=1,
-                         temperature=0.01,
-                         num_beams=1,
-                         top_p=0.95,
-                         do_sample=True
-                        ).to('cpu')
-    
-    return tokenizer.batch_decode(res,skip_special_tokens=True)
+    try:
+        if not hasattr(model, "device") or str(model.device) != str(device):
+            model.to(device)
+    except Exception:
+        pass
+    tokens = _to_device(tokens, device)
 
-def rag_chatbot(user_query:str, vec_db, model, tokenizer):
-    # query_vector = create_embeddings(text=user_query,
-    #                   model=SentenceTransformer('thenlper/gte-small', device="cuda"))
+    res = model.generate(
+        **tokens,
+        max_new_tokens=gen_budget,
+        num_return_sequences=1,
+        temperature=0.01,
+        num_beams=1,
+        top_p=0.95,
+        do_sample=True
+    ).to("cpu")
 
+    return tokenizer.batch_decode(res, skip_special_tokens=True)
+
+def rag_chatbot(user_query: str, vec_db, model, tokenizer):
     PROMPT_TEMPLATE = """
-You are a helpful AI assistant that answers questions **clearly and accurately** based **only on the given context below**.
+You are a helpful AI assistant that answers questions clearly and accurately based only on the given context below.
 
 Only use the provided context below to answer the question. If the context does not contain a complete answer, respond with "I don’t know based on the provided context."
-
 You must not use your own knowledge or assumptions.
 
 ---
@@ -83,80 +105,30 @@ Question:
 Answer:
 """
 
-    # # 1) Dense retrieval  ------------------------------------------------
-    # q_emb = embedd_model.encode(user_query, convert_to_tensor=True, normalize_embeddings=True)
-    # dense_hits = vec_DB.similarity_search_with_score(q_emb, k=TOP_K_DENSE)   # [(doc, score), ...]
-
-    # Searching the Vector Database
-
-    retrieved_context = query_vecdb(query=user_query,
-                               vectorstore=vec_db,
-                               )
-
-    # # 2) Keyword extraction & filter  ------------------------------------
-    # query_kws = extract_KW_from_query(KW_MODEL, doc=user_query, top_n=5, mmr_diversity=0.7)
-    # filtered  = []
-    # for doc, score in retrieved_context:
-    #     doc_id = doc.metadata.get("doc_id")
-    #     kws = [k for k, _ in keyword_db.get(doc_id, [])]
-    #     if any(k in kws for k in query_kws):
-    #         filtered.append((doc, score))
-
-    # # if nothing survives, fall back to dense top-k
-    # if not filtered:
-    #     filtered = retrieved_context[:TOP_K_CONTEXT]
-    # else:
-    #     filtered = filtered[:TOP_K_CONTEXT]
-
-    # contexts = [d.page_content for d, _ in filtered]
-    
-    
+    # 1) Retrieve
+    retrieved_context = query_vecdb(query=user_query, vectorstore=vec_db)
     print(f"\nDense Retrieval Context:\n{retrieved_context}")
-    # retrieved_qa = semantic_chunk_retriever.invoke(user_query)
-    # print(f"\nKeyword Filtered Context:\n{retrieved_context}")
 
     if not retrieved_context:
         return "I don't know. I couldn't find the relevant information in the provided context.", None
-    
-    # text = "\n\n".join(retrieved_context)
 
-    text = "\n\n".join(item.page_content for item in retrieved_context)
-    
-    # # Use regex to find all content after "A:"
-    # answers = re.findall(r'A:\s*(.*?)(?=\s*Q:|$)', text, re.DOTALL)
-    
-    # # Combine all answers into a single string
-    # context_text = " ".join(answer.strip() for answer in answers)
+    # 2) Auto-trim to fit model context
+    k, per_doc = _auto_limits(user_query, retrieved_context, tokenizer, model, want_k_default=3)
+    trimmed_snippets = []
+    for d in retrieved_context[:k]:
+        txt = getattr(d, "page_content", str(d))
+        trimmed_snippets.append(_trim_text(tokenizer, txt, per_doc))
+    text = "\n\n".join(trimmed_snippets)
 
-    # prompt_template = ChatPromptTemplate.from_template(PROMPT_TEMPLATE)
-    prompt_template = PROMPT_TEMPLATE
-    prompt = prompt_template.format(context=text, query=user_query)
-    # print(prompt)
+    # 3) Build prompt + generate
+    prompt = PROMPT_TEMPLATE.format(context=text, query=user_query)
+    response = generate_response(model=model, tokenizer=tokenizer, text=prompt)
 
-    
-    # print(context)
-    
-    # history = []
-    # retrieval = semantic_chunk_retriever.invoke(user_query)
-    # for doc in retrieval:
-    #     history.append(doc.page_content)
-    # retrieval = test_collection.query(query_embeddings=query_vector, n_results=5)
-    # documents = retrieval["documents"]
-    # history.append(context)
-    # history.append(user_query)
-    # context = " ".join(history)
-    # print(context)
-
-    # message = [
-    #     {"role":"system", "content":f"You are an AI assistant that answers a user's query accurately from the given context. If you can not find relevant information in context, please respond with 'I don't know'."},
-    #     {"role":"user", "content": user_query}
-    # ]
-
-    response = generate_response(model=model,
-                                 tokenizer=tokenizer,
-                                 text=prompt)
-    # print(response[0].split("Output:\n")[1].split("### End of Output", 1)[0].strip())
-    # output = response[0].split("Output:\n")[1].split("### End of Output", 1)[0].strip()
-    # output = output.split("\n")[0]
-    output = response[0].split("Answer:\n")[1].split("\n")[0]
+    out_text = response[0] if isinstance(response, list) else str(response)
+    if "Answer:\n" in out_text:
+        after = out_text.split("Answer:\n", 1)[1]
+        first_line = next((ln.strip() for ln in after.splitlines() if ln.strip()), "")
+        output = first_line or after.strip()
+    else:
+        output = out_text.strip()
     return output, retrieved_context

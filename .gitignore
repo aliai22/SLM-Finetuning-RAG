@@ -13,7 +13,7 @@ __pycache__/
 .idea/
 
 # Data & Artifacts
-data/*
+# data/*
 !data/README.md
 checkpoints/
 runs/
@@ -34,7 +34,7 @@ milvus/
 # large training/eval data (kept external)
 src/llmrag/training/finetuning_embeddmodel/train_dataset.json
 src/llmrag/training/finetuning_embeddmodel/filtered_qa_pairs.jsonl
-data/*
+# data/*
 
 # --------------------------------------------------------------------
 # Model Weights (tracked via Git LFS)
@@ -53,6 +53,10 @@ data/*
 !src/llmrag/models/gen_model/text_chunks_finetuning/**
 !src/llmrag/models/emb_model/**
 
+src/llmrag/models/emb_model/README.md
+src/llmrag/models/gen_model/qa_pairs_finetuning/README.md
+src/llmrag/models/gen_model/text_chunks_finetuning/README.md
+
 # Optionally if you keep models elsewhere (training dirs)
 !src/llmrag/training/finetuning_textbooks/**
 !src/llmrag/training/finetuning_embeddmodel/**
@@ -62,4 +66,37 @@ data/*
 !data/finetuning/**
 !data/resources/**
 
+# --------------------------------------------------------------------
+# Local-only / scratch / logs / smoke / legacy
+# --------------------------------------------------------------------
 
+# Local eggs & builds
+src/llmrag.egg-info/
+
+# Local scripts and reports
+src/llmrag/build_gold_docs.py
+src/llmrag/computation.txt
+src/llmrag/efficiency_report.py
+src/llmrag/finetuning_evaluation_text.py
+src/llmrag/gpu_training_log.csv
+src/llmrag/gpu_training_log2.0.csv
+
+# Smoke / scratch files
+scratch_sensitivity_smoke.csv
+_smoke/
+scripts/
+
+# Local embedding extras
+src/llmrag/training/embedding/extras/
+
+# Legacy evals (pre-refactor)
+src/llmrag/eval/rag_eval_b1/
+src/llmrag/eval/rag_eval_b2/
+src/llmrag/eval/rag_eval_ft1/
+src/llmrag/eval/rag_eval_ft2/
+
+# Optional: logs and reports (safe to ignore)
+artifacts/
+archive/
+tools/reports/*.csv
+src/llmrag/docs/

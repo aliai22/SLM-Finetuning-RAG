@@ -3,14 +3,14 @@ from math import ceil
 import torch
 from langchain_community.vectorstores import Chroma
 
-from FT_1RAG.dataset import batchify
+from llmrag.pipelines.ft_1rag.dataset import batchify
 
 import torch
 import gc
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.docstore.document import Document
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_core.documents import Document
 from PyPDF2 import PdfReader
 import os
 from typing import List
@@ -18,7 +18,7 @@ import os
 import re
 import unicodedata
 
-from langchain.schema import Document
+# from langchain.schema import Document
 
 
 # import chromadb
@@ -350,9 +350,9 @@ def query_vecdb(
     # return [doc for doc, _ in ranked_docs[:rerank_top_k]]
     return [doc for doc in retrieved_docs]
 
-def similarity_score(text1, text2, model, tokenizer):
+def similarity_score(text1, text2, model, tokenizer=None):
     embedding_func = LocalEmbeddingFunction(embedd_model=model,
-                                            tokenizer=tokenizer)
+                                            )
     embeddings1 = np.array(embedding_func.embed_query(query=text1))
     embeddings2 = np.array(embedding_func.embed_query(query=text2))
 
