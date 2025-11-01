@@ -57,4 +57,4 @@ response, context = run_rag_pipeline(
 - The fine-tuned variants (FT-1/FT-2) analyze cross-domain generalization, swapping generator and retrieval domains.
 - All pipeline components are modular and reusable for future domain-adaptation experiments.
 
-![RAG Pipeline Overview](docs/figures/rag_pipelines.png)
+![RAG Pipeline Overview](https://github.com/aliai22/SLM-Finetuning-RAG/blob/refactor/docs/figures/rag_pipelines-removebg-preview.jpg)

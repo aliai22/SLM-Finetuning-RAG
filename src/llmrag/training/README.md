@@ -39,7 +39,7 @@ Training leverages **parameter-efficient fine-tuning (PEFT)** through LoRA adapt
 
 
 > **Figure 1. Fine-tuning workflow for the Small Language Model (Phi-2)**  
-> ![SLM Fine-Tuning Workflow](docs/figures/slm_finetuning.png)
+> ![SLM Fine-Tuning Workflow](https://github.com/aliai22/SLM-Finetuning-RAG/blob/refactor/docs/figures/slm_finetuning-removebg-preview.jpg)
 
 ### Key scripts
 | File | Purpose |
@@ -73,7 +73,7 @@ The **embedding fine-tuning** stage adapts sentence embeddings to better capture
 **Goal:** Improve retrieval alignment between question and context in RAG pipelines.
 
 > **Figure 2. Embedding Fine-Tuning Workflow**  
-> ![Embedding Fine-Tuning Workflow](docs/figures/embedding_finetuning.png)
+> ![Embedding Fine-Tuning Workflow](https://github.com/aliai22/SLM-Finetuning-RAG/blob/refactor/docs/figures/embedding_finetuning-removebg-preview.jpg)
 
 ### Key script
 | File | Purpose |
