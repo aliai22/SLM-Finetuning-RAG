@@ -53,6 +53,10 @@ src/llmrag/training/finetuning_embeddmodel/filtered_qa_pairs.jsonl
 !src/llmrag/models/gen_model/text_chunks_finetuning/**
 !src/llmrag/models/emb_model/**
 
+src/llmrag/models/emb_model/README.md
+src/llmrag/models/gen_model/qa_pairs_finetuning/README.md
+src/llmrag/models/gen_model/text_chunks_finetuning/README.md
+
 # Optionally if you keep models elsewhere (training dirs)
 !src/llmrag/training/finetuning_textbooks/**
 !src/llmrag/training/finetuning_embeddmodel/**
