@@ -13,7 +13,7 @@ __pycache__/
 .idea/
 
 # Data & Artifacts
-data/*
+# data/*
 !data/README.md
 checkpoints/
 runs/
