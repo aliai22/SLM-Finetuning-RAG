@@ -1,0 +1,9 @@
+cff-version: 1.2.0
+title: "Water Stress Diagnosis RAG & SLM Experiments (Reproducible Code)"
+authors:
+  - family-names: "Your-Surname"
+    given-names: "Your-Given-Name"
+    affiliation: "Your Affiliation"
+version: "0.1.0"
+date-released: "2025-10-20"
+repository-code: "https://github.com/yourname/llmrag-journal"
