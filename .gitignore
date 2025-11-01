@@ -99,4 +99,4 @@ src/llmrag/eval/rag_eval_ft2/
 artifacts/
 archive/
 tools/reports/*.csv
-docs/
+src/llmrag/docs/
