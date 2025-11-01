@@ -34,7 +34,7 @@ milvus/
 # large training/eval data (kept external)
 src/llmrag/training/finetuning_embeddmodel/train_dataset.json
 src/llmrag/training/finetuning_embeddmodel/filtered_qa_pairs.jsonl
-data/*
+# data/*
 
 # --------------------------------------------------------------------
 # Model Weights (tracked via Git LFS)
